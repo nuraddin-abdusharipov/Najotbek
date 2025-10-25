@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kirish — Test Platforma</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="auth-wrap login-wrap">
+      <div class="auth-header">
+        <div class="auth-logo">
+          <i class="fas fa-code"></i>
+        </div>
+        <h2>Platformaga kirish</h2>
+        <p class="muted">Hisobingizga kirish uchun ma'lumotlaringizni kiriting</p>
+      </div>
+      
+      <form id="loginForm">
+        <div class="input-group">
+          <label for="email">
+            <i class="fas fa-envelope"></i>
+            Elektron pochta
+          </label>
+          <input id="email" type="email" placeholder="email@misol.uz" required />
+        </div>
+        
+        <div class="input-group">
+          <label for="password">
+            <i class="fas fa-lock"></i>
+            Parol
+          </label>
+          <input id="password" type="password" placeholder="Kamida 6 ta belgi" required />
+          <button type="button" class="password-toggle" id="togglePassword">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+        
+        <div class="auth-options">
+          <label class="checkbox">
+            <input type="checkbox" id="rememberMe">
+            <span class="checkmark"></span>
+            Eslab qolish
+          </label>
+          <a href="#" class="forgot-password">Parolni unutdingizmi?</a>
+        </div>
+        
+        <button type="submit" id="loginBtn" class="btn primary login-btn">
+          <i class="fas fa-sign-in-alt"></i>
+          Kirish
+          <div class="loading-spinner hidden"></div>
+        </button>
+      </form>
+      
+      <p id="msg" class="muted error-message"></p>
+    </div>
+  </div>
+
+<script type="module">
+import { auth } from './firebase.js';
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+const email = document.getElementById('email');
+const password = document.getElementById('password');
+const msg = document.getElementById('msg');
+const loginBtn = document.getElementById('loginBtn');
+const loginForm = document.getElementById('loginForm');
+const togglePassword = document.getElementById('togglePassword');
+
+const ADMIN_EMAIL = "admin@gmail.com";
+
+// Password toggle functionality
+togglePassword.addEventListener('click', () => {
+  const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+  password.setAttribute('type', type);
+  togglePassword.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+});
+
+// Form submission
+loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  msg.textContent = '';
+  loginBtn.disabled = true;
+  loginBtn.querySelector('.loading-spinner').classList.remove('hidden');
+  
+  try {
+    await signInWithEmailAndPassword(auth, email.value.trim(), password.value.trim());
+    
+    // Show success message
+    msg.textContent = "Muvaffaqiyatli kirildi!";
+    msg.className = 'muted success-message';
+    
+    // Redirect after short delay
+    setTimeout(() => {
+      if (email.value.trim() === ADMIN_EMAIL) {
+        window.location = 'admin.html';
+      } else {
+        window.location = 'user.html';
+      }
+    }, 1000);
+    
+  } catch (e) {
+    msg.textContent = "Xato: " + getErrorMessage(e.code);
+    msg.className = 'muted error-message';
+  } finally {
+    loginBtn.disabled = false;
+    loginBtn.querySelector('.loading-spinner').classList.add('hidden');
+  }
+});
+
+// Error message translation
+function getErrorMessage(errorCode) {
+  const errors = {
+    'auth/invalid-email': 'Noto\'g\'ri elektron pochta formati',
+    'auth/user-disabled': 'Ushbu foydalanuvchi bloklangan',
+    'auth/user-not-found': 'Foydalanuvchi topilmadi',
+    'auth/wrong-password': 'Noto\'g\'ri parol',
+    'auth/too-many-requests': 'Juda ko\'p urinishlar, keyinroq urinib ko\'ring'
+  };
+  return errors[errorCode] || 'Tizimda xatolik yuz berdi';
+}
+
+// Load saved credentials
+window.addEventListener('load', () => {
+  const savedEmail = localStorage.getItem('savedEmail');
+  const rememberMe = localStorage.getItem('rememberMe') === 'true';
+  
+  if (savedEmail && rememberMe) {
+    email.value = savedEmail;
+    document.getElementById('rememberMe').checked = true;
+  }
+});
+
+// Save credentials if remember me is checked
+document.getElementById('rememberMe').addEventListener('change', (e) => {
+  if (e.target.checked) {
+    localStorage.setItem('rememberMe', 'true');
+  } else {
+    localStorage.removeItem('rememberMe');
+    localStorage.removeItem('savedEmail');
+  }
+});
+
+email.addEventListener('blur', () => {
+  if (document.getElementById('rememberMe').checked) {
+    localStorage.setItem('savedEmail', email.value);
+  }
+});
+</script>
+  <script type="module" src="init-helper.js"></script>
+</body>
+</html>

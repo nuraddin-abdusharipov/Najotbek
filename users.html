@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Panel — Foydalanuvchilar</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background: #f8f9fa; font-family: "Segoe UI", sans-serif; color: #333; }
+    .container { max-width: 1000px; margin: 30px auto; background: #fff; border-radius: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); padding: 20px 30px; color: black; }
+    h2 { text-align: center; margin-bottom: 20px; color: black; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border-bottom: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: top; }
+    th { background: #007bff; color: white; font-weight: 600; }
+    tr:hover { background: #f1f1f1; }
+    .stats { font-size: 13px; color: #555; margin-top: 4px; }
+    .delete-btn { background: #dc3545; color: white; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; transition: 0.3s; }
+    .delete-btn:hover { background: #b52a37; }
+    .notification {
+      position: fixed; top: 20px; right: 20px;
+      padding: 12px 18px; border-radius: 8px;
+      color: #fff; font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      opacity: 0; transform: translateY(-10px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      z-index: 9999;
+    }
+    .notification.show { opacity: 1; transform: translateY(0); }
+    .notification.success { background: #28a745; }
+    .notification.error { background: #dc3545; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2><i class="fas fa-users"></i> Foydalanuvchilar Statistikasi</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Foydalanuvchi</th>
+        <th>Email</th>
+        <th>Ro‘yxatdan o‘tgan</th>
+        <th>Test Natijalari</th>
+        <th>Amal</th>
+      </tr>
+    </thead>
+    <tbody id="usersTable">
+      <tr><td colspan="5">Yuklanmoqda...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script type="module">
+import { auth, db } from './firebase.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { 
+  collection, getDocs, query, where, orderBy, deleteDoc, doc 
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const usersTable = document.getElementById("usersTable");
+
+onAuthStateChanged(auth, async user => {
+  if (!user) return location.href = 'login.html';
+  if (user.email !== "admin@gmail.com") return location.href = 'user.html';
+  await loadUsers();
+});
+
+async function loadUsers() {
+  try {
+    const usersSnap = await getDocs(query(collection(db, "users"), orderBy("createdAt", "desc")));
+    const resultsSnap = await getDocs(collection(db, "results"));
+    
+    const allResults = {};
+    resultsSnap.forEach(r => {
+      const data = r.data();
+      if (!allResults[data.uid]) allResults[data.uid] = [];
+      allResults[data.uid].push(data);
+    });
+
+    let html = "";
+    usersSnap.forEach(docu => {
+      const u = docu.data();
+      const createdAt = u.createdAt?.seconds ? new Date(u.createdAt.seconds * 1000).toLocaleString() : "Noma’lum";
+      const userResults = allResults[u.uid] || [];
+      
+      let statsHtml = "";
+      if (userResults.length > 0) {
+        userResults.forEach((r, i) => {
+          const date = r.date?.seconds ? new Date(r.date.seconds * 1000).toLocaleDateString() : "Noma’lum";
+          statsHtml += `
+            <div class="stats">
+              <strong>${i+1}.</strong> ${r.category} | ${date} <br>
+              ✅ To‘g‘ri: ${r.correct} | ❌ Xato: ${r.wrong} | 🎯 Ball: ${r.score}%
+            </div>`;
+        });
+      } else {
+        statsHtml = `<span class="stats">Test ishlamagan</span>`;
+      }
+
+      html += `
+        <tr>
+          <td><strong>${u.username || "Noma’lum"}</strong><br><small>${u.uid}</small></td>
+          <td>${u.email}</td>
+          <td>${createdAt}</td>
+          <td>${statsHtml}</td>
+          <td>
+            ${u.email === "admin@gmail.com" ? 
+              `<button class="delete-btn" disabled>Admin</button>` :
+              `<button class="delete-btn" data-uid="${u.uid}">O‘chirish</button>`
+            }
+          </td>
+        </tr>`;
+    });
+
+    usersTable.innerHTML = html;
+    document.querySelectorAll('.delete-btn[data-uid]').forEach(btn => {
+      btn.onclick = () => deleteUser(btn.dataset.uid);
+    });
+
+  } catch (e) {
+    console.error(e);
+    showNotification("Xatolik: " + e.message, "error");
+  }
+}
+
+async function deleteUser(uid) {
+  if (!confirm("Bu foydalanuvchini o‘chirmoqchimisiz?")) return;
+  try {
+    const userSnap = await getDocs(query(collection(db, "users"), where("uid", "==", uid)));
+    const resultSnap = await getDocs(query(collection(db, "results"), where("uid", "==", uid)));
+    for (const d of userSnap.docs) await deleteDoc(doc(db, "users", d.id));
+    for (const d of resultSnap.docs) await deleteDoc(doc(db, "results", d.id));
+    showNotification("Foydalanuvchi o‘chirildi", "success");
+    await loadUsers();
+  } catch (err) {
+    showNotification("Xatolik: " + err.message, "error");
+  }
+}
+
+function showNotification(msg, type="info") {
+  const div = document.createElement("div");
+  div.className = `notification ${type}`;
+  div.innerHTML = msg;
+  document.body.appendChild(div);
+  setTimeout(() => div.classList.add("show"), 10);
+  setTimeout(() => div.remove(), 4000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Panel — Test Platforma</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="admin-wrap">
+      <div class="admin-header">
+        <div class="admin-info">
+          <h2><i class="fas fa-crown"></i> Admin Panel</h2>
+          <p class="muted">Platformani boshqarish va monitoring qilish</p>
+        </div>
+        <div class="admin-actions">
+          <button id="refreshData" class="btn ghost">
+            <i class="fas fa-sync-alt"></i>
+            Yangilash
+          </button>
+        </div>
+      </div>
+
+      <!-- Statistics Cards -->
+      <div class="grid" id="statsGrid">
+        <div class="card stat-card">
+          <div class="stat-icon users">
+            <i class="fas fa-users"></i>
+          </div>
+          <div class="stat-info">
+            <h3 id="userCount">0</h3>
+            <p class="muted">Jami foydalanuvchilar</p>
+          </div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-icon tested">
+            <i class="fas fa-user-check"></i>
+          </div>
+          <div class="stat-info">
+            <h3 id="testedUsers">0</h3>
+            <p class="muted">Test ishlagan foydalanuvchilar</p>
+          </div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-icon attempts">
+            <i class="fas fa-chart-bar"></i>
+          </div>
+          <div class="stat-info">
+            <h3 id="attemptsCount">0</h3>
+            <p class="muted">Jami urinishlar</p>
+          </div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-icon score">
+            <i class="fas fa-star"></i>
+          </div>
+          <div class="stat-info">
+            <h3 id="avgScore">0</h3>
+            <p class="muted">O'rtacha ball</p>
+          </div>
+        </div>
+      </div>
+      
+      <p id="statsMsg" class="muted"></p>
+
+      <!-- Admin Actions -->
+      <div class="admin-section">
+        <h3><i class="fas fa-cogs"></i> Admin Amallari</h3>
+        <div class="card question-form">
+          <div class="action-buttons" style="margin-top: 15px;">
+            <a href="register.html" class="btn primary">
+              <i class="fas fa-user-plus"></i>
+              Foydalanuvchi qo'shish
+            </a>
+            <a href="users.html" class="btn ghost">
+              <i class="fas fa-users-cog"></i>
+              Foydalanuvchilar boshqaruvi
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Question Section -->
+      <div class="admin-section">
+        <h3><i class="fas fa-plus-circle"></i> Savol qo'shish</h3>
+        <div class="card question-form">
+          <div class="form-row">
+            <div class="input-group">
+              <label for="qdir">Yo'nalish</label>
+              <select id="qdir">
+                <option value="Boshlangich">Boshlangich</option>
+                <option value="Tenglama">Tenglama</option>
+                <option value="Grafik">Grafik</option>
+                <option value="Oddiy">Oddiy</option>
+              </select>
+            </div>
+            
+            <div class="input-group">
+              <label for="qdifficulty">Murakkablik</label>
+              <select id="qdifficulty">
+                <option value="oson">Oson</option>
+                <option value="ortacha">O'rtacha</option>
+                <option value="qiyin">Qiyin</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="qtext">Savol matni</label>
+            <textarea id="qtext" placeholder="Savolni kiriting..." rows="3"></textarea>
+          </div>
+
+          <div class="options-grid">
+            <div class="input-group correct-option">
+              <label for="opt1">
+                <i class="fas fa-check-circle"></i>
+                To'g'ri javob
+              </label>
+              <input id="opt1" placeholder="To'g'ri javobni kiriting" />
+            </div>
+            <div class="input-group">
+              <label for="opt2">Noto'g'ri javob 1</label>
+              <input id="opt2" placeholder="Noto'g'ri javob" />
+            </div>
+            <div class="input-group">
+              <label for="opt3">Noto'g'ri javob 2</label>
+              <input id="opt3" placeholder="Noto'g'ri javob" />
+            </div>
+            <div class="input-group">
+              <label for="opt4">Noto'g'ri javob 3</label>
+              <input id="opt4" placeholder="Noto'g'ri javob" />
+            </div>
+          </div>
+
+          <button id="addQuestion" class="btn primary">
+            <i class="fas fa-save"></i>
+            Savol qo'shish
+          </button>
+          <p id="qmsg" class="muted"></p>
+        </div>
+      </div>
+
+      <!-- Questions List -->
+      <div class="admin-section">
+        <div class="section-header">
+          <h3><i class="fas fa-list"></i> Savollar ro'yxati</h3>
+          <div class="filter-controls">
+            <select id="filterDir">
+              <option value="">Barcha yo'nalishlar</option>
+              <option value="Boshlangich">Boshlangich</option>
+              <option value="Tenglama">Tenglama</option>
+              <option value="flutter">Flutter</option>
+              <option value="Oddiy">Oddiy</option>
+            </select>
+            <select id="filterDifficulty">
+              <option value="">Barcha murakkablik</option>
+              <option value="oson">Oson</option>
+              <option value="ortacha">O'rtacha</option>
+              <option value="qiyin">Qiyin</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Savol</th>
+                  <th>Yo'nalish</th>
+                  <th>Murakkablik</th>
+                  <th>Amallar</th>
+                </tr>
+              </thead>
+              <tbody id="questionsTable">
+                <tr>
+                  <td colspan="4" class="empty-table">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Savollar yuklanmoqda...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div class="admin-section">
+        <div class="section-header">
+          <h3><i class="fas fa-chart-line"></i> Test natijalari</h3>
+          <button id="clearResults" class="btn danger">
+            <i class="fas fa-trash"></i>
+            Natijalarni o'chirish
+          </button>
+        </div>
+        
+        <div class="card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Foydalanuvchi</th>
+                  <th>Yo'nalish</th>
+                  <th>Ball</th>
+                  <th>Foiz</th>
+                  <th>Urinishlar</th>
+                  <th>Sana</th>
+                </tr>
+              </thead>
+              <tbody id="resultsTable">
+                <tr>
+                  <td colspan="6" class="empty-table">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Natijalar yuklanmoqda...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Actions -->
+      <div class="admin-actions-footer">
+        <button id="exportData" class="btn ghost">
+          <i class="fas fa-download"></i>
+          Ma'lumotlarni yuklab olish
+        </button>
+        <button id="logout" class="btn ghost">
+          <i class="fas fa-sign-out-alt"></i>
+          Chiqish
+        </button>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+import { auth, db } from './firebase.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { 
+  collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, where 
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+onAuthStateChanged(auth, user => {
+  if (!user) {
+    location.href = 'login.html';
+  } else if (user.email !== "admin@gmail.com") {
+    location.href = 'user.html';
+  }
+});
+
+// Refresh data
+document.getElementById('refreshData').addEventListener('click', () => {
+  loadAdminStats();
+  loadQuestions();
+});
+
+async function loadAdminStats() {
+  try {
+    const usersSnap = await getDocs(collection(db, "users"));
+    const resultsSnap = await getDocs(collection(db, "results"));
+
+    document.getElementById("userCount").textContent = usersSnap.size;
+
+    const uniqueUsers = new Set();
+    let totalScore = 0;
+    let validResults = 0;
+
+    resultsSnap.forEach((r) => {
+      const data = r.data();
+      if (data.uid) uniqueUsers.add(data.uid);
+      const score = Number(data.score);
+      if (!isNaN(score)) {
+        totalScore += score;
+        validResults++;
+      }
+    });
+
+    document.getElementById("testedUsers").textContent = uniqueUsers.size;
+    document.getElementById("attemptsCount").textContent = resultsSnap.size;
+    document.getElementById("avgScore").textContent = validResults > 0 ? (totalScore / validResults).toFixed(1) : "0";
+    
+    const tbody = document.getElementById("resultsTable");
+    tbody.innerHTML = "";
+    
+    if (resultsSnap.empty) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="empty-table">
+            <i class="fas fa-inbox"></i>
+            <p>Hozircha natijalar mavjud emas</p>
+          </td>
+        </tr>
+      `;
+    } else {
+      resultsSnap.forEach((r) => {
+        const d = r.data();
+        const percentage = d.maxScore ? ((d.score / d.maxScore) * 100).toFixed(1) : '0';
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>
+            <div class="user-cell">
+              <div class="user-avatar-small">
+                <i class="fas fa-user"></i>
+              </div>
+              <span>${d.username || "Noma'lum"}</span>
+            </div>
+          </td>
+          <td><span class="category-badge">${d.category || "Noma'lum"}</span></td>
+          <td><strong>${d.score ?? "0"}</strong></td>
+          <td>
+            <div class="percentage ${percentage >= 70 ? 'high' : percentage >= 50 ? 'medium' : 'low'}">
+              ${percentage}%
+            </div>
+          </td>
+          <td>${d.attempts ?? "1"}</td>
+          <td>${d.date?.seconds ? new Date(d.date.seconds * 1000).toLocaleDateString() : "N/A"}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("statsMsg").textContent = resultsSnap.empty
+      ? "Hozircha natijalar mavjud emas."
+      : "";
+  } catch (e) {
+    document.getElementById("statsMsg").textContent = "Xatolik: " + e.message;
+  }
+}
+
+async function loadQuestions() {
+  const filterDir = document.getElementById('filterDir').value;
+  const filterDifficulty = document.getElementById('filterDifficulty').value;
+  const questionsTable = document.getElementById('questionsTable');
+  questionsTable.innerHTML = '<tr><td colspan="4" class="empty-table"><i class="fas fa-spinner fa-spin"></i><p>Savollar yuklanmoqda...</p></td></tr>';
+
+  try {
+    let constraints = [];
+    if (filterDir) {
+      constraints.push(where('direction', '==', filterDir));
+    }
+    if (filterDifficulty) {
+      constraints.push(where('difficulty', '==', filterDifficulty));
+    }
+
+    let qSnap;
+    if (constraints.length > 0) {
+      qSnap = await getDocs(query(collection(db, 'questions'), ...constraints));
+    } else {
+      qSnap = await getDocs(collection(db, 'questions'));
+    }
+
+    if (qSnap.empty) {
+      questionsTable.innerHTML = `
+        <tr>
+          <td colspan="4" class="empty-table">
+            <i class="fas fa-inbox"></i>
+            <p>Hozircha savollar mavjud emas</p>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    questionsTable.innerHTML = '';
+    qSnap.forEach((q) => {
+      const d = q.data();
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="question-text">${d.question}</td>
+        <td><span class="category-badge">${d.direction}</span></td>
+        <td><span class="difficulty-badge ${d.difficulty}">${d.difficulty}</span></td>
+        <td>
+          <button class="btn danger deleteBtn" data-id="${q.id}">
+            <i class="fas fa-trash"></i>
+            O'chirish
+          </button>
+        </td>
+      `;
+      questionsTable.appendChild(tr);
+    });
+
+    document.querySelectorAll('.deleteBtn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        if (!confirm("Ushbu savolni o'chirishni xohlaysizmi?")) return;
+        try {
+          await deleteDoc(doc(db, 'questions', id));
+          btn.closest('tr').remove();
+          showNotification("Savol muvaffaqiyatli o'chirildi", "success");
+        } catch (e) {
+          showNotification("Xatolik: " + e.message, "error");
+        }
+      });
+    });
+  } catch (e) {
+    showNotification("Xatolik: " + e.message, "error");
+  }
+}
+
+document.getElementById('addQuestion').addEventListener('click', async () => {
+  const qdir = document.getElementById('qdir').value;
+  const qdifficulty = document.getElementById('qdifficulty').value;
+  const qtext = document.getElementById('qtext').value.trim();
+  const opt1 = document.getElementById('opt1').value.trim();
+  const opt2 = document.getElementById('opt2').value.trim();
+  const opt3 = document.getElementById('opt3').value.trim();
+  const opt4 = document.getElementById('opt4').value.trim();
+  const qmsg = document.getElementById('qmsg');
+
+  if (!qdir || !qtext || !opt1 || !opt2 || !opt3 || !opt4) {
+    qmsg.textContent = "Barcha maydonlarni to'ldiring.";
+    qmsg.className = 'muted error-message';
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, 'questions'), {
+      direction: qdir,
+      difficulty: qdifficulty,
+      question: qtext,
+      options: [opt1, opt2, opt3, opt4],
+      correctIndex: 0,
+      createdAt: serverTimestamp()
+    });
+    qmsg.textContent = "✅ Savol muvaffaqiyatli qo'shildi.";
+    qmsg.className = 'muted success-message';
+    ['qtext','opt1','opt2','opt3','opt4'].forEach(id => document.getElementById(id).value = '');
+    loadQuestions();
+  } catch (e) {
+    qmsg.textContent = "Xatolik: " + e.message;
+    qmsg.className = 'muted error-message';
+  }
+});
+
+document.getElementById('clearResults').addEventListener('click', async () => {
+  if (!confirm("Barcha natijalarni o'chirishni xohlaysizmi? Bu amalni ortga qaytarib bo'lmaydi.")) return;
+
+  const btn = document.getElementById('clearResults');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> O\'chirilmoqda...';
+
+  try {
+    const resultsSnap = await getDocs(collection(db, "results"));
+    const deletePromises = resultsSnap.docs.map((docSnap) => deleteDoc(doc(db, "results", docSnap.id)));
+    await Promise.all(deletePromises);
+    
+    showNotification("✅ Barcha natijalar o'chirildi.", "success");
+    await loadAdminStats();
+  } catch (e) {
+    showNotification("Xatolik: " + e.message, "error");
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = originalText;
+});
+
+// Filter events
+document.getElementById('filterDir').addEventListener('change', loadQuestions);
+document.getElementById('filterDifficulty').addEventListener('change', loadQuestions);
+
+// Export data
+document.getElementById('exportData').addEventListener('click', async () => {
+  showNotification("Ma'lumotlar yuklab olinmoqda...", "info");
+  // Implementation for data export would go here
+  setTimeout(() => {
+    showNotification("Ma'lumotlar muvaffaqiyatli yuklab olindi", "success");
+  }, 2000);
+});
+
+document.getElementById('logout').addEventListener('click', () => {
+  signOut(auth).then(() => location.href = 'login.html');
+});
+
+// Simple notification function
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `notification ${type} show`;
+  notification.innerHTML = `
+    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+    ${message}
+  `;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.remove();
+  }, 5000);
+}
+
+loadAdminStats();
+loadQuestions();
+</script>
+  <script type="module" src="init-helper.js"></script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Foydalanuvchi Paneli — Test Platforma</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="user-wrap">
+      <header class="user-header">
+        <div class="user-info">
+          <h2><i class="fas fa-user"></i> Xush kelibsiz, <span id="username">...</span></h2>
+          <p class="muted" id="userEmail"></p>
+        </div>
+        <button id="logout" class="btn ghost">
+          <i class="fas fa-sign-out-alt"></i> Chiqish
+        </button>
+      </header>
+
+      <div class="card">
+        <h3><i class="fas fa-graduation-cap"></i> Test yo‘nalishini tanlang</h3>
+        <p class="muted">Quyidagi yo‘nalishlardan birini tanlab testni boshlang</p>
+
+        <div id="subjectsList" class="subjects-grid">
+          <div class="loading-spinner-large"></div>
+          <p>Yo‘nalishlar yuklanmoqda...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+import { auth, db } from './firebase.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+// Foydalanuvchi holatini tekshirish
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    location.href = "login.html";
+    return;
+  }
+
+  // Agar admin bo‘lsa -> users.html sahifasiga yo‘naltir
+  if (user.email === "admin@gmail.com") {
+    location.href = "admin.html";
+    return;
+  }
+
+  // Foydalanuvchi ma’lumotlarini chiqarish
+  document.getElementById("username").textContent = user.displayName || "Foydalanuvchi";
+  document.getElementById("userEmail").textContent = user.email;
+
+  // Test yo‘nalishlarini yuklash
+  await loadSubjects();
+});
+
+// Yo‘nalishlarni yuklash
+async function loadSubjects() {
+  try {
+    const subjectsDiv = document.getElementById("subjectsList");
+    subjectsDiv.innerHTML = `<div class="loading-spinner-large"></div><p>Yuklanmoqda...</p>`;
+
+    const subjectsSnap = await getDocs(query(collection(db, "subjects"), orderBy("name")));
+    if (subjectsSnap.empty) {
+      subjectsDiv.innerHTML = `<p class="muted">Hozircha test yo‘nalishlari mavjud emas.</p>`;
+      return;
+    }
+
+    let html = '';
+    subjectsSnap.forEach(doc => {
+      const data = doc.data();
+      html += `
+        <div class="subject-card">
+          <div class="subject-icon"><i class="fas fa-book"></i></div>
+          <div class="subject-info">
+            <h4>${data.name}</h4>
+            <p>${data.description || 'Izoh yo‘q'}</p>
+            <button class="btn start-btn" data-subject="${data.name}">
+              <i class="fas fa-play"></i> Testni boshlash
+            </button>
+          </div>
+        </div>
+      `;
+    });
+
+    subjectsDiv.innerHTML = html;
+
+    // Har bir tugmaga bosilganda test sahifasiga yo‘naltirish
+    document.querySelectorAll(".start-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const subject = e.target.closest("button").dataset.subject;
+        location.href = `test.html?subject=${encodeURIComponent(subject)}`;
+      });
+    });
+
+  } catch (error) {
+    console.error("Yo‘nalishlarni yuklashda xatolik:", error);
+    document.getElementById("subjectsList").innerHTML = `
+      <p class="error">Xatolik yuz berdi: ${error.message}</p>
+    `;
+  }
+}
+
+// Chiqish
+document.getElementById("logout").addEventListener("click", () => {
+  signOut(auth).then(() => location.href = "login.html");
+});
+</script>
+
+<style>
+.subjects-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.subject-card {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.subject-icon {
+  font-size: 2rem;
+  margin-right: 1rem;
+  color: #007bff;
+}
+.subject-info h4 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.start-btn {
+  margin-top: .5rem;
+}
+</style>
+</body>
+</html>
