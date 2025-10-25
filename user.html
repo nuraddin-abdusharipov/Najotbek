@@ -21,12 +21,12 @@
       </header>
 
       <div class="card">
-        <h3><i class="fas fa-graduation-cap"></i> Test yo‘nalishini tanlang</h3>
-        <p class="muted">Quyidagi yo‘nalishlardan birini tanlab testni boshlang</p>
+        <h3><i class="fas fa-graduation-cap"></i> Test yo'nalishini tanlang</h3>
+        <p class="muted">Quyidagi yo'nalishlardan birini tanlab testni boshlang</p>
 
         <div id="subjectsList" class="subjects-grid">
           <div class="loading-spinner-large"></div>
-          <p>Yo‘nalishlar yuklanmoqda...</p>
+          <p>Yo'nalishlar yuklanmoqda...</p>
         </div>
       </div>
     </div>
@@ -44,42 +44,63 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  // Agar admin bo‘lsa -> users.html sahifasiga yo‘naltir
+  // Agar admin bo'lsa -> admin.html sahifasiga yo'naltir
   if (user.email === "admin@gmail.com") {
     location.href = "admin.html";
     return;
   }
 
-  // Foydalanuvchi ma’lumotlarini chiqarish
-  document.getElementById("username").textContent = user.displayName || "Foydalanuvchi";
+  // Foydalanuvchi ma'lumotlarini chiqarish
+  document.getElementById("username").textContent = user.displayName || user.email.split('@')[0] || "Foydalanuvchi";
   document.getElementById("userEmail").textContent = user.email;
 
-  // Test yo‘nalishlarini yuklash
+  // Test yo'nalishlarini yuklash
   await loadSubjects();
 });
 
-// Yo‘nalishlarni yuklash
+// Yo'nalishlarni yuklash
 async function loadSubjects() {
   try {
     const subjectsDiv = document.getElementById("subjectsList");
     subjectsDiv.innerHTML = `<div class="loading-spinner-large"></div><p>Yuklanmoqda...</p>`;
 
-    const subjectsSnap = await getDocs(query(collection(db, "questions"), orderBy("name")));
-    if (subjectsSnap.empty) {
-      subjectsDiv.innerHTML = `<p class="muted">Hozircha test yo‘nalishlari mavjud emas.</p>`;
+    // Savollardan yo'nalishlarni olish
+    const questionsSnap = await getDocs(collection(db, "questions"));
+    
+    if (questionsSnap.empty) {
+      subjectsDiv.innerHTML = `<p class="muted">Hozircha test yo'nalishlari mavjud emas.</p>`;
+      return;
+    }
+
+    // Takrorlanmas yo'nalishlarni olish
+    const directions = new Set();
+    questionsSnap.forEach(doc => {
+      const data = doc.data();
+      if (data.direction) {
+        directions.add(data.direction);
+      }
+    });
+
+    if (directions.size === 0) {
+      subjectsDiv.innerHTML = `<p class="muted">Hozircha test yo'nalishlari mavjud emas.</p>`;
       return;
     }
 
     let html = '';
-    subjectsSnap.forEach(doc => {
-      const data = doc.data();
+    const directionArray = Array.from(directions);
+    
+    directionArray.forEach(direction => {
+      // Har bir yo'nalish uchun savollar sonini hisoblash
+      const directionQuestions = questionsSnap.docs.filter(doc => doc.data().direction === direction);
+      const questionCount = directionQuestions.length;
+      
       html += `
         <div class="subject-card">
           <div class="subject-icon"><i class="fas fa-book"></i></div>
           <div class="subject-info">
-            <h4>${data.name}</h4>
-            <p>${data.description || 'Izoh yo‘q'}</p>
-            <button class="btn start-btn" data-subject="${data.name}">
+            <h4>${direction}</h4>
+            <p>${questionCount} ta savol</p>
+            <button class="btn primary start-btn" data-direction="${direction}">
               <i class="fas fa-play"></i> Testni boshlash
             </button>
           </div>
@@ -89,18 +110,19 @@ async function loadSubjects() {
 
     subjectsDiv.innerHTML = html;
 
-    // Har bir tugmaga bosilganda test sahifasiga yo‘naltirish
+    // Har bir tugmaga bosilganda test sahifasiga yo'naltirish
     document.querySelectorAll(".start-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
-        const subject = e.target.closest("button").dataset.subject;
-        location.href = `test.html?subject=${encodeURIComponent(subject)}`;
+        const direction = e.target.closest("button").dataset.direction;
+        localStorage.setItem('direction', direction);
+        location.href = "dashboard.html";
       });
     });
 
   } catch (error) {
-    console.error("Yo‘nalishlarni yuklashda xatolik:", error);
+    console.error("Yo'nalishlarni yuklashda xatolik:", error);
     document.getElementById("subjectsList").innerHTML = `
-      <p class="error">Xatolik yuz berdi: ${error.message}</p>
+      <p class="error-message">Xatolik yuz berdi: ${error.message}</p>
     `;
   }
 }
@@ -114,28 +136,55 @@ document.getElementById("logout").addEventListener("click", () => {
 <style>
 .subjects-grid {
   display: grid;
-  gap: 1rem;
-  margin-top: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
 }
 .subject-card {
   display: flex;
-  align-items: center;
-  background: #fff;
+  align-items: flex-start;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+.subject-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 .subject-icon {
   font-size: 2rem;
-  margin-right: 1rem;
-  color: #007bff;
+  margin-right: 15px;
+  color: var(--accent1);
+}
+.subject-info {
+  flex: 1;
 }
 .subject-info h4 {
-  margin: 0;
-  font-size: 1.1rem;
+  margin: 0 0 8px 0;
+  font-size: 1.2rem;
+  color: var(--text);
+}
+.subject-info p {
+  margin: 0 0 15px 0;
+  color: var(--muted);
 }
 .start-btn {
-  margin-top: .5rem;
+  width: 100%;
+}
+.loading-spinner-large {
+  width: 40px;
+  height: 40px;
+  border: 3px solid transparent;
+  border-top: 3px solid var(--accent1);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 15px;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>
 </body>
