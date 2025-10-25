@@ -64,7 +64,7 @@ async function loadSubjects() {
     const subjectsDiv = document.getElementById("subjectsList");
     subjectsDiv.innerHTML = `<div class="loading-spinner-large"></div><p>Yuklanmoqda...</p>`;
 
-    const subjectsSnap = await getDocs(query(collection(db, "subjects"), orderBy("name")));
+    const subjectsSnap = await getDocs(query(collection(db, "questions"), orderBy("name")));
     if (subjectsSnap.empty) {
       subjectsDiv.innerHTML = `<p class="muted">Hozircha test yo‘nalishlari mavjud emas.</p>`;
       return;
