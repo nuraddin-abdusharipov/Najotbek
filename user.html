@@ -35,7 +35,7 @@
           <div class="info-card">
             <i class="fas fa-clock"></i>
             <div>
-              <strong>30 daqiqa</strong>
+              <strong>2 soat</strong>
               <span>Umumiy vaqt</span>
             </div>
           </div>
@@ -69,8 +69,16 @@
         </div>
       </div>
 
-      <!-- OXIRGI NATIJALAR QISMINI OLIB TASHLADIK -->
-
+      <!-- Recent Results -->
+      <div class="recent-results">
+        <h3><i class="fas fa-history"></i> Oxirgi natijalar</h3>
+        <div class="card">
+          <div id="recentResultsList">
+            <div class="loading-spinner-large"></div>
+            <p class="muted">Yuklanmoqda...</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -102,7 +110,78 @@ onAuthStateChanged(auth, async (user) => {
   }
   
   document.getElementById("userEmail").textContent = user.email;
+  await loadRecentResults(user.uid);
 });
+
+// Oxirgi natijalarni yuklash
+async function loadRecentResults(uid) {
+  try {
+    const resultsSnap = await getDocs(
+      query(
+        collection(db, "results"), 
+        where("uid", "==", uid)
+      )
+    );
+
+    const resultsList = document.getElementById("recentResultsList");
+    
+    if (resultsSnap.empty) {
+      resultsList.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-inbox"></i>
+          <p>Hozircha test natijalari mavjud emas</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Client tomonda saralash
+    const results = [];
+    resultsSnap.forEach(doc => {
+      results.push({ id: doc.id, ...doc.data() });
+    });
+    
+    // Date bo'yicha saralash (client tomonda)
+    results.sort((a, b) => {
+      const dateA = a.date?.seconds || 0;
+      const dateB = b.date?.seconds || 0;
+      return dateB - dateA; // Teskari tartib
+    }).slice(0, 5); // Faqat 5 ta oxirgi natija
+
+    let html = '';
+    results.forEach(data => {
+      const date = data.date?.seconds ? new Date(data.date.seconds * 1000).toLocaleDateString() : "Noma'lum";
+      const percentage = data.percentage || 0;
+      
+      let percentageClass = 'low';
+      if (percentage >= 80) percentageClass = 'high';
+      else if (percentage >= 60) percentageClass = 'medium';
+
+      html += `
+        <div class="result-item">
+          <div class="result-info">
+            <div class="result-category">${data.category}</div>
+            <div class="result-date">${date}</div>
+          </div>
+          <div class="result-stats">
+            <div class="result-score">${data.score || 0} ball</div>
+            <div class="result-percentage ${percentageClass}">
+              ${percentage.toFixed(1)}%
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    resultsList.innerHTML = html;
+
+  } catch (error) {
+    console.error("Natijalarni yuklashda xatolik:", error);
+    document.getElementById("recentResultsList").innerHTML = `
+      <p class="error-message">Natijalarni yuklashda xatolik yuz berdi</p>
+    `;
+  }
+}
 
 // Testni boshlash
 document.getElementById("startTest").addEventListener("click", () => {
@@ -119,7 +198,7 @@ document.getElementById("logout").addEventListener("click", () => {
 
 <style>
 .user-wrap {
-  max-width: 600px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -195,6 +274,84 @@ document.getElementById("logout").addEventListener("click", () => {
   padding: 15px 25px;
 }
 
+.recent-results {
+  margin-top: 3rem;
+}
+
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+}
+
+.result-category {
+  font-weight: 600;
+  color: var(--accent1);
+}
+
+.result-score {
+  font-weight: 700;
+}
+
+.result-percentage {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.result-percentage.high {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--accent3);
+}
+
+.result-percentage.medium {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.result-percentage.low {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--accent4);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
+
+.loading-spinner-large {
+  width: 40px;
+  height: 40px;
+  border: 3px solid transparent;
+  border-top: 3px solid var(--accent1);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 @media (max-width: 768px) {
   .user-header {
     flex-direction: column;
@@ -208,6 +365,12 @@ document.getElementById("logout").addEventListener("click", () => {
   
   .action-buttons {
     flex-direction: column;
+  }
+  
+  .result-item {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
   }
 }
 </style>
