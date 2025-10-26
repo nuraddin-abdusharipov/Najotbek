@@ -252,12 +252,11 @@
   </div>
 
 <script type="module">
-import { auth, db, storage } from './firebase.js';
+import { auth, db } from './firebase.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { 
   collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, where 
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
 onAuthStateChanged(auth, user => {
   if (!user) {
@@ -267,10 +266,17 @@ onAuthStateChanged(auth, user => {
   }
 });
 
-// Rasm yuklash va preview
+// Rasm preview
 document.getElementById('qimage').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (file) {
+    // Fayl hajmini tekshirish (max 1MB)
+    if (file.size > 1024 * 1024) {
+      alert("Rasm hajmi 1MB dan kichik bo'lishi kerak");
+      this.value = '';
+      return;
+    }
+    
     const reader = new FileReader();
     reader.onload = function(e) {
       document.getElementById('previewImg').src = e.target.result;
@@ -282,6 +288,84 @@ document.getElementById('qimage').addEventListener('change', function(e) {
   }
 });
 
+// Savol qo'shish
+document.getElementById('addQuestion').addEventListener('click', async () => {
+  const qdir = document.getElementById('qdir').value;
+  const qdifficulty = document.getElementById('qdifficulty').value;
+  const qtext = document.getElementById('qtext').value.trim();
+  const qimage = document.getElementById('qimage').files[0];
+  const opt1 = document.getElementById('opt1').value.trim();
+  const opt2 = document.getElementById('opt2').value.trim();
+  const opt3 = document.getElementById('opt3').value.trim();
+  const opt4 = document.getElementById('opt4').value.trim();
+  const qmsg = document.getElementById('qmsg');
+  const addBtn = document.getElementById('addQuestion');
+
+  if (!qdir || !qtext || !opt1 || !opt2 || !opt3 || !opt4) {
+    qmsg.textContent = "Barcha maydonlarni to'ldiring.";
+    qmsg.className = 'muted error-message';
+    return;
+  }
+
+  addBtn.disabled = true;
+  addBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
+
+  try {
+    let imageBase64 = '';
+    
+    // Rasm yuklangan bo'lsa
+    if (qimage) {
+      const reader = new FileReader();
+      
+      await new Promise((resolve, reject) => {
+        reader.onload = function(e) {
+          imageBase64 = e.target.result;
+          resolve();
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(qimage);
+      });
+    }
+
+    // Savolni Firestore ga saqlash
+    const questionData = {
+      direction: qdir,
+      difficulty: qdifficulty,
+      question: qtext,
+      options: [opt1, opt2, opt3, opt4],
+      correctIndex: 0,
+      createdAt: serverTimestamp()
+    };
+
+    // Agar rasm bo'lsa, qo'shamiz
+    if (imageBase64) {
+      questionData.imageUrl = imageBase64;
+    }
+
+    await addDoc(collection(db, 'questions'), questionData);
+    
+    qmsg.textContent = "✅ Savol muvaffaqiyatli qo'shildi.";
+    qmsg.className = 'muted success-message';
+    
+    // Formani tozalash
+    ['qtext','opt1','opt2','opt3','opt4'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('qimage').value = '';
+    document.getElementById('imagePreview').style.display = 'none';
+    
+    // Savollar ro'yxatini yangilash
+    await loadQuestions();
+    
+  } catch (e) {
+    console.error("Xatolik:", e);
+    qmsg.textContent = "Xatolik: " + e.message;
+    qmsg.className = 'muted error-message';
+  } finally {
+    addBtn.disabled = false;
+    addBtn.innerHTML = '<i class="fas fa-save"></i> Savol qo\'shish';
+  }
+});
 // Refresh data
 document.getElementById('refreshData').addEventListener('click', () => {
   loadAdminStats();
