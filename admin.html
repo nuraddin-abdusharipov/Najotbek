@@ -366,6 +366,7 @@ document.getElementById('addQuestion').addEventListener('click', async () => {
     addBtn.innerHTML = '<i class="fas fa-save"></i> Savol qo\'shish';
   }
 });
+
 // Refresh data
 document.getElementById('refreshData').addEventListener('click', () => {
   loadAdminStats();
@@ -522,59 +523,6 @@ async function loadQuestions() {
   }
 }
 
-// Savol qo'shish
-document.getElementById('addQuestion').addEventListener('click', async () => {
-  const qdir = document.getElementById('qdir').value;
-  const qdifficulty = document.getElementById('qdifficulty').value;
-  const qtext = document.getElementById('qtext').value.trim();
-  const qimage = document.getElementById('qimage').files[0];
-  const opt1 = document.getElementById('opt1').value.trim();
-  const opt2 = document.getElementById('opt2').value.trim();
-  const opt3 = document.getElementById('opt3').value.trim();
-  const opt4 = document.getElementById('opt4').value.trim();
-  const qmsg = document.getElementById('qmsg');
-
-  if (!qdir || !qtext || !opt1 || !opt2 || !opt3 || !opt4) {
-    qmsg.textContent = "Barcha maydonlarni to'ldiring.";
-    qmsg.className = 'muted error-message';
-    return;
-  }
-
-  try {
-    let imageUrl = '';
-    
-    // Rasm yuklangan bo'lsa
-    if (qimage) {
-      const imageRef = ref(storage, `questions/${Date.now()}_${qimage.name}`);
-      const snapshot = await uploadBytes(imageRef, qimage);
-      imageUrl = await getDownloadURL(snapshot.ref);
-    }
-
-    await addDoc(collection(db, 'questions'), {
-      direction: qdir,
-      difficulty: qdifficulty,
-      question: qtext,
-      imageUrl: imageUrl,
-      options: [opt1, opt2, opt3, opt4],
-      correctIndex: 0,
-      createdAt: serverTimestamp()
-    });
-    
-    qmsg.textContent = "✅ Savol muvaffaqiyatli qo'shildi.";
-    qmsg.className = 'muted success-message';
-    
-    // Formani tozalash
-    ['qtext','opt1','opt2','opt3','opt4'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('qimage').value = '';
-    document.getElementById('imagePreview').style.display = 'none';
-    
-    loadQuestions();
-  } catch (e) {
-    qmsg.textContent = "Xatolik: " + e.message;
-    qmsg.className = 'muted error-message';
-  }
-});
-
 // Filter events
 document.getElementById('filterDir').addEventListener('change', loadQuestions);
 document.getElementById('filterDifficulty').addEventListener('change', loadQuestions);
@@ -606,7 +554,6 @@ document.getElementById('clearResults').addEventListener('click', async () => {
 // Export data
 document.getElementById('exportData').addEventListener('click', async () => {
   showNotification("Ma'lumotlar yuklab olinmoqda...", "info");
-  // Implementation for data export would go here
   setTimeout(() => {
     showNotification("Ma'lumotlar muvaffaqiyatli yuklab olindi", "success");
   }, 2000);
