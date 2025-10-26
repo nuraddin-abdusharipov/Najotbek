@@ -90,7 +90,7 @@
             <div class="input-group">
               <label for="qdir">Yo'nalish</label>
               <select id="qdir">
-                <option value="Boshlangich">Boshlangich</option>
+                <option value="Boshlangich">Boshlang'ich</option>
                 <option value="Tenglama">Tenglama</option>
                 <option value="Grafik">Grafik</option>
                 <option value="Oddiy">Oddiy</option>
@@ -110,6 +110,18 @@
           <div class="input-group">
             <label for="qtext">Savol matni</label>
             <textarea id="qtext" placeholder="Savolni kiriting..." rows="3"></textarea>
+          </div>
+
+          <!-- Rasm yuklash -->
+          <div class="input-group">
+            <label for="qimage">
+              <i class="fas fa-image"></i>
+              Savol uchun rasm (ixtiyoriy)
+            </label>
+            <input type="file" id="qimage" accept="image/*" />
+            <div class="image-preview" id="imagePreview" style="display:none; margin-top:10px;">
+              <img id="previewImg" style="max-width:200px; max-height:150px; border-radius:8px;" />
+            </div>
           </div>
 
           <div class="options-grid">
@@ -149,9 +161,9 @@
           <div class="filter-controls">
             <select id="filterDir">
               <option value="">Barcha yo'nalishlar</option>
-              <option value="Boshlangich">Boshlangich</option>
+              <option value="Boshlangich">Boshlang'ich</option>
               <option value="Tenglama">Tenglama</option>
-              <option value="flutter">Flutter</option>
+              <option value="Grafik">Grafik</option>
               <option value="Oddiy">Oddiy</option>
             </select>
             <select id="filterDifficulty">
@@ -171,12 +183,13 @@
                   <th>Savol</th>
                   <th>Yo'nalish</th>
                   <th>Murakkablik</th>
+                  <th>Rasm</th>
                   <th>Amallar</th>
                 </tr>
               </thead>
               <tbody id="questionsTable">
                 <tr>
-                  <td colspan="4" class="empty-table">
+                  <td colspan="5" class="empty-table">
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Savollar yuklanmoqda...</p>
                   </td>
@@ -206,13 +219,14 @@
                   <th>Yo'nalish</th>
                   <th>Ball</th>
                   <th>Foiz</th>
-                  <th>Urinishlar</th>
+                  <th>To'g'ri/Jami</th>
+                  <th>Vaqt</th>
                   <th>Sana</th>
                 </tr>
               </thead>
               <tbody id="resultsTable">
                 <tr>
-                  <td colspan="6" class="empty-table">
+                  <td colspan="7" class="empty-table">
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Natijalar yuklanmoqda...</p>
                   </td>
@@ -238,17 +252,33 @@
   </div>
 
 <script type="module">
-import { auth, db } from './firebase.js';
+import { auth, db, storage } from './firebase.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { 
   collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, where 
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
 onAuthStateChanged(auth, user => {
   if (!user) {
     location.href = 'login.html';
   } else if (user.email !== "admin@gmail.com") {
     location.href = 'user.html';
+  }
+});
+
+// Rasm yuklash va preview
+document.getElementById('qimage').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('previewImg').src = e.target.result;
+      document.getElementById('imagePreview').style.display = 'block';
+    }
+    reader.readAsDataURL(file);
+  } else {
+    document.getElementById('imagePreview').style.display = 'none';
   }
 });
 
@@ -283,13 +313,14 @@ async function loadAdminStats() {
     document.getElementById("attemptsCount").textContent = resultsSnap.size;
     document.getElementById("avgScore").textContent = validResults > 0 ? (totalScore / validResults).toFixed(1) : "0";
     
+    // Natijalar jadvalini yangilash
     const tbody = document.getElementById("resultsTable");
     tbody.innerHTML = "";
     
     if (resultsSnap.empty) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="6" class="empty-table">
+          <td colspan="7" class="empty-table">
             <i class="fas fa-inbox"></i>
             <p>Hozircha natijalar mavjud emas</p>
           </td>
@@ -298,7 +329,11 @@ async function loadAdminStats() {
     } else {
       resultsSnap.forEach((r) => {
         const d = r.data();
-        const percentage = d.maxScore ? ((d.score / d.maxScore) * 100).toFixed(1) : '0';
+        const percentage = d.percentage || 0;
+        const timeSpent = d.timeSpent || 0;
+        const minutes = Math.floor(timeSpent / 60);
+        const seconds = timeSpent % 60;
+        
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>
@@ -312,11 +347,12 @@ async function loadAdminStats() {
           <td><span class="category-badge">${d.category || "Noma'lum"}</span></td>
           <td><strong>${d.score ?? "0"}</strong></td>
           <td>
-            <div class="percentage ${percentage >= 70 ? 'high' : percentage >= 50 ? 'medium' : 'low'}">
-              ${percentage}%
+            <div class="percentage ${percentage >= 80 ? 'high' : percentage >= 60 ? 'medium' : 'low'}">
+              ${percentage.toFixed(1)}%
             </div>
           </td>
-          <td>${d.attempts ?? "1"}</td>
+          <td>${d.correctAnswers || 0}/${d.totalQuestions || 0}</td>
+          <td>${minutes}:${seconds < 10 ? '0' : ''}${seconds}</td>
           <td>${d.date?.seconds ? new Date(d.date.seconds * 1000).toLocaleDateString() : "N/A"}</td>
         `;
         tbody.appendChild(tr);
@@ -335,7 +371,7 @@ async function loadQuestions() {
   const filterDir = document.getElementById('filterDir').value;
   const filterDifficulty = document.getElementById('filterDifficulty').value;
   const questionsTable = document.getElementById('questionsTable');
-  questionsTable.innerHTML = '<tr><td colspan="4" class="empty-table"><i class="fas fa-spinner fa-spin"></i><p>Savollar yuklanmoqda...</p></td></tr>';
+  questionsTable.innerHTML = '<tr><td colspan="5" class="empty-table"><i class="fas fa-spinner fa-spin"></i><p>Savollar yuklanmoqda...</p></td></tr>';
 
   try {
     let constraints = [];
@@ -356,7 +392,7 @@ async function loadQuestions() {
     if (qSnap.empty) {
       questionsTable.innerHTML = `
         <tr>
-          <td colspan="4" class="empty-table">
+          <td colspan="5" class="empty-table">
             <i class="fas fa-inbox"></i>
             <p>Hozircha savollar mavjud emas</p>
           </td>
@@ -373,6 +409,7 @@ async function loadQuestions() {
         <td class="question-text">${d.question}</td>
         <td><span class="category-badge">${d.direction}</span></td>
         <td><span class="difficulty-badge ${d.difficulty}">${d.difficulty}</span></td>
+        <td>${d.imageUrl ? '<i class="fas fa-image text-success"></i>' : '<i class="fas fa-times text-muted"></i>'}</td>
         <td>
           <button class="btn danger deleteBtn" data-id="${q.id}">
             <i class="fas fa-trash"></i>
@@ -401,10 +438,12 @@ async function loadQuestions() {
   }
 }
 
+// Savol qo'shish
 document.getElementById('addQuestion').addEventListener('click', async () => {
   const qdir = document.getElementById('qdir').value;
   const qdifficulty = document.getElementById('qdifficulty').value;
   const qtext = document.getElementById('qtext').value.trim();
+  const qimage = document.getElementById('qimage').files[0];
   const opt1 = document.getElementById('opt1').value.trim();
   const opt2 = document.getElementById('opt2').value.trim();
   const opt3 = document.getElementById('opt3').value.trim();
@@ -418,17 +457,33 @@ document.getElementById('addQuestion').addEventListener('click', async () => {
   }
 
   try {
+    let imageUrl = '';
+    
+    // Rasm yuklangan bo'lsa
+    if (qimage) {
+      const imageRef = ref(storage, `questions/${Date.now()}_${qimage.name}`);
+      const snapshot = await uploadBytes(imageRef, qimage);
+      imageUrl = await getDownloadURL(snapshot.ref);
+    }
+
     await addDoc(collection(db, 'questions'), {
       direction: qdir,
       difficulty: qdifficulty,
       question: qtext,
+      imageUrl: imageUrl,
       options: [opt1, opt2, opt3, opt4],
       correctIndex: 0,
       createdAt: serverTimestamp()
     });
+    
     qmsg.textContent = "✅ Savol muvaffaqiyatli qo'shildi.";
     qmsg.className = 'muted success-message';
+    
+    // Formani tozalash
     ['qtext','opt1','opt2','opt3','opt4'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('qimage').value = '';
+    document.getElementById('imagePreview').style.display = 'none';
+    
     loadQuestions();
   } catch (e) {
     qmsg.textContent = "Xatolik: " + e.message;
@@ -436,6 +491,11 @@ document.getElementById('addQuestion').addEventListener('click', async () => {
   }
 });
 
+// Filter events
+document.getElementById('filterDir').addEventListener('change', loadQuestions);
+document.getElementById('filterDifficulty').addEventListener('change', loadQuestions);
+
+// Natijalarni o'chirish
 document.getElementById('clearResults').addEventListener('click', async () => {
   if (!confirm("Barcha natijalarni o'chirishni xohlaysizmi? Bu amalni ortga qaytarib bo'lmaydi.")) return;
 
@@ -459,10 +519,6 @@ document.getElementById('clearResults').addEventListener('click', async () => {
   btn.innerHTML = originalText;
 });
 
-// Filter events
-document.getElementById('filterDir').addEventListener('change', loadQuestions);
-document.getElementById('filterDifficulty').addEventListener('change', loadQuestions);
-
 // Export data
 document.getElementById('exportData').addEventListener('click', async () => {
   showNotification("Ma'lumotlar yuklab olinmoqda...", "info");
@@ -472,11 +528,12 @@ document.getElementById('exportData').addEventListener('click', async () => {
   }, 2000);
 });
 
+// Chiqish
 document.getElementById('logout').addEventListener('click', () => {
   signOut(auth).then(() => location.href = 'login.html');
 });
 
-// Simple notification function
+// Notification function
 function showNotification(message, type = 'info') {
   const notification = document.createElement('div');
   notification.className = `notification ${type} show`;
@@ -491,6 +548,7 @@ function showNotification(message, type = 'info') {
   }, 5000);
 }
 
+// Dastlabki yuklash
 loadAdminStats();
 loadQuestions();
 </script>
