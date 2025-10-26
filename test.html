@@ -169,12 +169,13 @@ function showQuestion() {
   // Rasmni ko'rsatish
   const imageContainer = document.getElementById('questionImage');
   const qimage = document.getElementById('qimage');
-  if (currentQ.imageUrl) {
-    qimage.src = currentQ.imageUrl;
-    imageContainer.style.display = 'block';
-  } else {
-    imageContainer.style.display = 'none';
-  }
+  // test.html ichida
+if (currentQ.imageUrl && currentQ.imageUrl.trim() !== '') {
+  qimage.src = currentQ.imageUrl; // Base64 string to'g'ridan-to'g'ri ishlaydi
+  imageContainer.style.display = 'block';
+} else {
+  imageContainer.style.display = 'none';
+}
   
   // Variantlarni ko'rsatish
   const optionsContainer = document.getElementById('opts');
@@ -454,4 +455,5 @@ function shuffleArray(array) {
 
   <script type="module" src="init-helper.js"></script>
 </body>
+
 </html>
