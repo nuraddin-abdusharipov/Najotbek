@@ -35,7 +35,7 @@
           <div class="info-card">
             <i class="fas fa-clock"></i>
             <div>
-              <strong>2 soat</strong>
+              <strong>30 daqiqa</strong>
               <span>Umumiy vaqt</span>
             </div>
           </div>
@@ -69,23 +69,15 @@
         </div>
       </div>
 
-      <!-- Recent Results -->
-      <div class="recent-results">
-        <h3><i class="fas fa-history"></i> Oxirgi natijalar</h3>
-        <div class="card">
-          <div id="recentResultsList">
-            <div class="loading-spinner-large"></div>
-            <p class="muted">Yuklanmoqda...</p>
-          </div>
-        </div>
-      </div>
+      <!-- OXIRGI NATIJALAR QISMINI OLIB TASHLADIK -->
+
     </div>
   </div>
 
 <script type="module">
 import { auth, db } from './firebase.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { collection, getDocs, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // Foydalanuvchi holatini tekshirish
 onAuthStateChanged(auth, async (user) => {
@@ -110,68 +102,7 @@ onAuthStateChanged(auth, async (user) => {
   }
   
   document.getElementById("userEmail").textContent = user.email;
-  await loadRecentResults(user.uid);
 });
-
-// Oxirgi natijalarni yuklash
-async function loadRecentResults(uid) {
-  try {
-    const resultsSnap = await getDocs(
-      query(
-        collection(db, "results"), 
-        where("uid", "==", uid),
-        orderBy("date", "desc"),
-        limit(5)
-      )
-    );
-
-    const resultsList = document.getElementById("recentResultsList");
-    
-    if (resultsSnap.empty) {
-      resultsList.innerHTML = `
-        <div class="empty-state">
-          <i class="fas fa-inbox"></i>
-          <p>Hozircha test natijalari mavjud emas</p>
-        </div>
-      `;
-      return;
-    }
-
-    let html = '';
-    resultsSnap.forEach(doc => {
-      const data = doc.data();
-      const date = data.date?.seconds ? new Date(data.date.seconds * 1000).toLocaleDateString() : "Noma'lum";
-      const percentage = data.percentage || 0;
-      
-      let percentageClass = 'low';
-      if (percentage >= 80) percentageClass = 'high';
-      else if (percentage >= 60) percentageClass = 'medium';
-
-      html += `
-        <div class="result-item">
-          <div class="result-info">
-            <div class="result-category">${data.category}</div>
-            <div class="result-date">${date}</div>
-          </div>
-          <div class="result-stats">
-            <div class="result-score">${data.score || 0} ball</div>
-            <div class="result-percentage ${percentageClass}">
-              ${percentage.toFixed(1)}%
-            </div>
-          </div>
-        </div>
-      `;
-    });
-
-    resultsList.innerHTML = html;
-
-  } catch (error) {
-    console.error("Natijalarni yuklashda xatolik:", error);
-    document.getElementById("recentResultsList").innerHTML = `
-      <p class="error-message">Xatolik yuz berdi: ${error.message}</p>
-    `;
-  }
-}
 
 // Testni boshlash
 document.getElementById("startTest").addEventListener("click", () => {
@@ -185,5 +116,100 @@ document.getElementById("logout").addEventListener("click", () => {
   signOut(auth).then(() => location.href = "login.html");
 });
 </script>
+
+<style>
+.user-wrap {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.user-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.direction-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.info-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+}
+
+.info-card i {
+  font-size: 1.5rem;
+  color: var(--accent2);
+}
+
+.info-card div {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-card strong {
+  font-size: 1.1rem;
+}
+
+.info-card span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.direction-selector {
+  margin: 2rem 0;
+}
+
+.selector-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.direction-select {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.start-btn {
+  flex: 1;
+  font-size: 1.1rem;
+  padding: 15px 25px;
+}
+
+@media (max-width: 768px) {
+  .user-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .direction-info {
+    grid-template-columns: 1fr;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+}
+</style>
 </body>
 </html>
