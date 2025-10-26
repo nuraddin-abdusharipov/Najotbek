@@ -17,7 +17,7 @@
             <span>Ball: <strong id="score">0</strong>/100</span>
             <span class="timer-container">
               <i class="fas fa-clock"></i>
-              <span id="timer">30:00</span>
+              <span id="timer">2:00:00</span>
             </span>
           </div>
         </div>
@@ -96,7 +96,7 @@ import { collection, getDocs, query, where, addDoc, serverTimestamp } from "http
 
 // Global sozlamalar
 const QUESTIONS_PER_TEST = 15;
-const TOTAL_TIME = 1800; // 30 daqiqa (1800 soniya)
+const TOTAL_TIME = 7200; // 30 daqiqa (1800 soniya)
 const MAX_SCORE = 100;
 const POINTS_PER_Q = Math.round(MAX_SCORE / QUESTIONS_PER_TEST);
 
@@ -457,3 +457,4 @@ function shuffleArray(array) {
 </body>
 
 </html>
+
