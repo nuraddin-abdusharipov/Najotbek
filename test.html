@@ -96,7 +96,7 @@ import { collection, getDocs, query, where, addDoc, serverTimestamp } from "http
 
 // Global sozlamalar
 const QUESTIONS_PER_TEST = 15;
-const TOTAL_TIME = 7200; // 30 daqiqa (1800 soniya)
+const TIME_PER_QUESTION = 180; // 3 daqiqa har savol uchun
 const MAX_SCORE = 100;
 const POINTS_PER_Q = Math.round(MAX_SCORE / QUESTIONS_PER_TEST);
 
@@ -104,7 +104,7 @@ let questions = [];
 let currentQuestionIndex = 0;
 let score = 0;
 let timerInterval = null;
-let timeLeft = TOTAL_TIME;
+let timeLeft = TIME_PER_QUESTION;
 let correctAnswers = 0;
 let wrongAnswers = 0;
 let startTime = Date.now();
@@ -137,19 +137,18 @@ async function loadQuestions() {
     shuffleArray(questions);
     questions = questions.slice(0, QUESTIONS_PER_TEST);
     
-    startTest();
+    showQuestion();
   } catch (error) {
     console.error("Savollarni yuklashda xatolik:", error);
     alert("Savollarni yuklashda xatolik yuz berdi");
   }
 }
 
-function startTest() {
-  startTimer();
-  showQuestion();
-}
-
 function showQuestion() {
+  clearInterval(timerInterval);
+  timeLeft = TIME_PER_QUESTION;
+  updateTimerDisplay();
+
   if (currentQuestionIndex >= questions.length) {
     finishTest();
     return;
@@ -162,26 +161,22 @@ function showQuestion() {
   document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
   
   const currentQ = questions[currentQuestionIndex];
-  
-  // Savol matni
   document.getElementById('qtext').textContent = currentQ.question;
   
-  // Rasmni ko'rsatish
+  // Rasm ko‘rsatish
   const imageContainer = document.getElementById('questionImage');
   const qimage = document.getElementById('qimage');
-  // test.html ichida
-if (currentQ.imageUrl && currentQ.imageUrl.trim() !== '') {
-  qimage.src = currentQ.imageUrl; // Base64 string to'g'ridan-to'g'ri ishlaydi
-  imageContainer.style.display = 'block';
-} else {
-  imageContainer.style.display = 'none';
-}
+  if (currentQ.imageUrl && currentQ.imageUrl.trim() !== '') {
+    qimage.src = currentQ.imageUrl;
+    imageContainer.style.display = 'block';
+  } else {
+    imageContainer.style.display = 'none';
+  }
   
-  // Variantlarni ko'rsatish
+  // Variantlarni chiqarish
   const optionsContainer = document.getElementById('opts');
   optionsContainer.innerHTML = '';
   
-  const shuffledOptions = [...currentQ.options];
   const shuffledIndices = Array.from({ length: currentQ.options.length }, (_, i) => i);
   shuffleArray(shuffledIndices);
   
@@ -196,11 +191,11 @@ if (currentQ.imageUrl && currentQ.imageUrl.trim() !== '') {
   });
   
   document.getElementById('next').classList.add('hidden');
+  startTimer();
 }
 
 function selectAnswer(isCorrect, selectedElement) {
-  // don't stop the global test timer when selecting an answer
-  // clearInterval(timerInterval);
+  clearInterval(timerInterval); // javob berilganda vaqt to‘xtaydi
   
   // Barcha variantlarni bloklash
   document.querySelectorAll('.option').forEach(opt => {
@@ -216,7 +211,7 @@ function selectAnswer(isCorrect, selectedElement) {
     selectedElement.classList.add('incorrect');
     wrongAnswers++;
     
-    // To'g'ri javobni ko'rsatish
+    // To‘g‘ri javobni ko‘rsatish
     document.querySelectorAll('.option').forEach(opt => {
       const optionText = opt.textContent;
       const correctAnswer = questions[currentQuestionIndex].options[questions[currentQuestionIndex].correctIndex];
@@ -236,19 +231,27 @@ document.getElementById('next').addEventListener('click', () => {
 });
 
 function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = TIME_PER_QUESTION;
   updateTimerDisplay();
   
   timerInterval = setInterval(() => {
     timeLeft--;
     updateTimerDisplay();
     
-    if (timeLeft <= 300) { // 5 daqiqa qolganda
+    if (timeLeft <= 30) {
       document.getElementById('timer').classList.add('warning');
     }
     
     if (timeLeft <= 0) {
       clearInterval(timerInterval);
-      finishTest();
+      wrongAnswers++;
+      currentQuestionIndex++;
+      if (currentQuestionIndex >= questions.length) {
+        finishTest();
+      } else {
+        showQuestion();
+      }
     }
   }, 1000);
 }
@@ -264,9 +267,9 @@ async function finishTest() {
   document.getElementById('qbox').classList.add('hidden');
   document.getElementById('result').classList.remove('hidden');
   
-  const timeSpent = TOTAL_TIME - timeLeft;
-  const minutesSpent = Math.floor(timeSpent / 60);
-  const secondsSpent = timeSpent % 60;
+  const totalTimeSpent = ((currentQuestionIndex + 1) * TIME_PER_QUESTION) - timeLeft;
+  const minutesSpent = Math.floor(totalTimeSpent / 60);
+  const secondsSpent = totalTimeSpent % 60;
   
   document.getElementById('finalScore').textContent = score;
   document.getElementById('totalScore').textContent = score;
@@ -274,7 +277,6 @@ async function finishTest() {
   document.getElementById('wrongCount').textContent = wrongAnswers;
   document.getElementById('timeSpent').textContent = `${minutesSpent}:${secondsSpent < 10 ? '0' : ''}${secondsSpent}`;
   
-  // Natija xabari
   const percentage = (score / MAX_SCORE) * 100;
   const resMsg = document.getElementById('resMsg');
   
@@ -289,7 +291,7 @@ async function finishTest() {
     resMsg.className = 'result-message error';
   }
   
-  await saveResult(timeSpent);
+  await saveResult(totalTimeSpent);
 }
 
 async function saveResult(timeSpent) {
@@ -330,6 +332,7 @@ function shuffleArray(array) {
   return array;
 }
 </script>
+
 
 <style>
 .test-header {
