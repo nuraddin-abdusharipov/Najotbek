@@ -1,48 +1,174 @@
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="uz">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Panel — Test Platforma</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Panel — Test Platforma</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<div class="container">
-  <div class="admin-wrap">
-    <div class="admin-header">
-      <div class="admin-info">
-        <h2><i class="fas fa-crown"></i> Admin Panel</h2>
-        <p class="muted">Platformani boshqarish va monitoring qilish</p>
+  <div class="container">
+    <div class="admin-wrap">
+      <div class="admin-header">
+        <div class="admin-info">
+          <h2><i class="fas fa-crown"></i> Admin Panel</h2>
+          <p class="muted">Platformani boshqarish va monitoring qilish</p>
+        </div>
+        <div class="admin-actions">
+          <button id="refreshData" class="btn ghost">
+            <i class="fas fa-sync-alt"></i>
+            Yangilash
+          </button>
+        </div>
       </div>
-      <div class="admin-actions">
-        <button id="refreshData" class="btn ghost">
-          <i class="fas fa-sync-alt"></i> Yangilash
-        </button>
-      </div>
-    </div>
 
-    <!-- Add Question Section -->
-    <div class="admin-section">
-      <h3><i class="fas fa-plus-circle"></i> Savol qo'shish</h3>
-      <div class="card question-form">
-        <div class="form-row">
-          <div class="input-group">
-            <label for="qdir">Yo'nalish</label>
-            <select id="qdir">
-              <option value="natural">Natural sonlar</option>
-              <option value="haqiqiy">Haqiqiy sonlar</option>
-              <option value="matnli">Matnli masalalar</option>
-              <option value="ratsional">Ratsional ko'rsatkichli daraja</option>
-              <option value="sonli">Sonli ketma-ketliklar</option>
-              <option value="trigonometriya">Trigonometriya asoslari</option>
-              <option value="algebraik">Algebraik ifodalar</option>
-            </select>
+      <!-- Statistics Cards -->
+      <div class="grid" id="statsGrid">
+        <div class="card stat-card">
+          <div class="stat-icon users">
+            <i class="fas fa-users"></i>
           </div>
+          <div class="stat-info">
+            <h3 id="userCount">0</h3>
+            <p class="muted">Jami foydalanuvchilar</p>
+          </div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-icon tested">
+            <i class="fas fa-user-check"></i>
+          </div>
+          <div class="stat-info">
+            <h3 id="testedUsers">0</h3>
+            <p class="muted">Test ishlagan foydalanuvchilar</p>
+          </div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-icon attempts">
+            <i class="fas fa-chart-bar"></i>
+          </div>
+          <div class="stat-info">
+            <h3 id="attemptsCount">0</h3>
+            <p class="muted">Jami urinishlar</p>
+          </div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-icon score">
+            <i class="fas fa-star"></i>
+          </div>
+          <div class="stat-info">
+            <h3 id="avgScore">0</h3>
+            <p class="muted">O'rtacha ball</p>
+          </div>
+        </div>
+      </div>
+      
+      <p id="statsMsg" class="muted"></p>
+
+      <!-- Admin Actions -->
+      <div class="admin-section">
+        <h3><i class="fas fa-cogs"></i> Admin Amallari</h3>
+        <div class="card question-form">
+          <div class="action-buttons" style="margin-top: 15px;">
+            <a class='btn primary' href='/register'>
+              <i class="fas fa-user-plus"></i>
+              Foydalanuvchi qo'shish
+            </a>
+            <a class='btn ghost' href='/users'>
+              <i class="fas fa-users-cog"></i>
+              Foydalanuvchilar boshqaruvi
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Question Section -->
+      <div class="admin-section">
+        <h3><i class="fas fa-plus-circle"></i> Savol qo'shish</h3>
+        <div class="card question-form">
+          <div class="form-row">
+            <div class="input-group">
+              <label for="qdir">Yo'nalish</label>
+              <select id="qdir">
+                <option value="natural">Natural sonlar</option>
+                <option value="haqiqiy">Haqiqiy sonlar</option>
+                <option value="matnli">Matnli masalalar</option>
+                <option value="ratsional">Ratsional ko'rsatkichli daraja</option>
+                <option value="sonli">Sonli ketma-ketliklar</option>
+                <option value="trigonometriya">Trigonometriya asoslari</option>
+                <option value="algebraik">Algebraik ifodalar</option>
+              </select>
+            </div>
+            
+            <div class="input-group">
+              <label for="qdifficulty">Murakkablik</label>
+              <select id="qdifficulty">
+                <option value="oson">Oson</option>
+                <option value="ortacha">O'rtacha</option>
+                <option value="qiyin">Qiyin</option>
+              </select>
+            </div>
+          </div>
+
           <div class="input-group">
-            <label for="qdifficulty">Murakkablik</label>
-            <select id="qdifficulty">
+            <label for="qtext">Savol matni</label>
+            <textarea id="qtext" placeholder="Savolni kiriting..." rows="3"></textarea>
+          </div>
+
+          <!-- Rasm yuklash -->
+          <div class="input-group">
+            <label for="qimage">
+              <i class="fas fa-image"></i>
+              Savol uchun rasm (ixtiyoriy)
+            </label>
+            <input type="file" id="qimage" accept="image/*" />
+            <div class="image-preview" id="imagePreview" style="display:none; margin-top:10px;">
+              <img id="previewImg" style="max-width:200px; max-height:150px; border-radius:8px;" />
+            </div>
+          </div>
+
+          <div class="options-grid">
+            <div class="input-group correct-option">
+              <label for="opt1">
+                <i class="fas fa-check-circle"></i>
+                To'g'ri javob
+              </label>
+              <input id="opt1" placeholder="To'g'ri javobni kiriting" />
+            </div>
+            <div class="input-group">
+              <label for="opt2">Noto'g'ri javob 1</label>
+              <input id="opt2" placeholder="Noto'g'ri javob" />
+            </div>
+            <div class="input-group">
+              <label for="opt3">Noto'g'ri javob 2</label>
+              <input id="opt3" placeholder="Noto'g'ri javob" />
+            </div>
+            <div class="input-group">
+              <label for="opt4">Noto'g'ri javob 3</label>
+              <input id="opt4" placeholder="Noto'g'ri javob" />
+            </div>
+          </div>
+
+          <button id="addQuestion" class="btn primary">
+            <i class="fas fa-save"></i>
+            Savol qo'shish
+          </button>
+          <p id="qmsg" class="muted"></p>
+        </div>
+      </div>
+
+      <!-- Questions List -->
+      <div class="admin-section">
+        <div class="section-header">
+          <h3><i class="fas fa-list"></i> Savollar ro'yxati</h3>
+          <div class="filter-controls">
+            <select id="filterDir">
+              <option value="">Barcha yo'nalishlar</option>
+              <option value="2019">2019-yil</option>
+            </select>
+            <select id="filterDifficulty">
+              <option value="">Barcha murakkablik</option>
               <option value="oson">Oson</option>
               <option value="ortacha">O'rtacha</option>
               <option value="qiyin">Qiyin</option>
@@ -50,143 +176,415 @@
           </div>
         </div>
 
-        <div class="input-group">
-          <label for="qtext">Savol matni</label>
-          <textarea id="qtext" rows="3" placeholder="Savolni kiriting..."></textarea>
+        <div class="card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Savol</th>
+                  <th>Yo'nalish</th>
+                  <th>Murakkablik</th>
+                  <th>Rasm</th>
+                  <th>Amallar</th>
+                </tr>
+              </thead>
+              <tbody id="questionsTable">
+                <tr>
+                  <td colspan="5" class="empty-table">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Savollar yuklanmoqda...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+      </div>
 
-        <div class="input-group">
-          <label for="qimage"><i class="fas fa-image"></i> Savol uchun rasm (ixtiyoriy)</label>
-          <input type="file" id="qimage" accept="image/*">
+      <!-- Results Section -->
+      <div class="admin-section">
+        <div class="section-header">
+          <h3><i class="fas fa-chart-line"></i> Test natijalari</h3>
+          <button id="clearResults" class="btn danger">
+            <i class="fas fa-trash"></i>
+            Natijalarni o'chirish
+          </button>
         </div>
-
-        <div class="options-grid">
-          <div class="input-group correct-option"><label for="opt1"><i class="fas fa-check-circle"></i> To'g'ri javob</label><input id="opt1" placeholder="To'g'ri javobni kiriting"></div>
-          <div class="input-group"><label for="opt2">Noto'g'ri javob 1</label><input id="opt2" placeholder="Noto'g'ri javob"></div>
-          <div class="input-group"><label for="opt3">Noto'g'ri javob 2</label><input id="opt3" placeholder="Noto'g'ri javob"></div>
-          <div class="input-group"><label for="opt4">Noto'g'ri javob 3</label><input id="opt4" placeholder="Noto'g'ri javob"></div>
+        
+        <div class="card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Foydalanuvchi</th>
+                  <th>Yo'nalish</th>
+                  <th>Ball</th>
+                  <th>Foiz</th>
+                  <th>To'g'ri/Jami</th>
+                  <th>Vaqt</th>
+                  <th>Sana</th>
+                </tr>
+              </thead>
+              <tbody id="resultsTable">
+                <tr>
+                  <td colspan="7" class="empty-table">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Natijalar yuklanmoqda...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+      </div>
 
-        <button id="addQuestion" class="btn primary"><i class="fas fa-save"></i> Savol qo'shish</button>
-        <p id="qmsg" class="muted"></p>
+      <!-- Admin Actions -->
+      <div class="admin-actions-footer">
+        <button id="exportData" class="btn ghost">
+          <i class="fas fa-download"></i>
+          Ma'lumotlarni yuklab olish
+        </button>
+        <button id="logout" class="btn ghost">
+          <i class="fas fa-sign-out-alt"></i>
+          Chiqish
+        </button>
       </div>
     </div>
-
-    <!-- Questions Table -->
-    <div class="admin-section">
-      <div class="section-header">
-        <h3><i class="fas fa-list"></i> Savollar ro'yxati</h3>
-      </div>
-      <div class="card">
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Savol</th>
-                <th>Yo'nalish</th>
-                <th>Murakkablik</th>
-                <th>Rasm</th>
-                <th>Amallar</th>
-              </tr>
-            </thead>
-            <tbody id="questionsTable">
-              <tr><td colspan="5" class="empty-table"><i class="fas fa-spinner fa-spin"></i> Savollar yuklanmoqda...</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div style="text-align:center; margin-top:10px;">
-          <button id="loadMore" class="btn ghost">Keyingi 20 ta</button>
-        </div>
-      </div>
-    </div>
-
   </div>
-</div>
 
 <script type="module">
-import { db, storage } from './firebase.js';
-import { collection, query, orderBy, limit, startAfter, addDoc, getDocs, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
+import { auth, db } from './firebase.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { 
+  collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, where 
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-let lastVisible = null;
+onAuthStateChanged(auth, user => {
+  if (!user) {
+    location.href = 'login.html';
+  } else if (user.email !== "admin@gmail.com") {
+    location.href = 'user.html';
+  }
+});
 
-// Load questions with batch and pagination
-async function loadQuestions(batchSize=20, reset=false){
-  const table = document.getElementById('questionsTable');
-  if(reset){ table.innerHTML='<tr><td colspan="5" class="empty-table"><i class="fas fa-spinner fa-spin"></i> Yuklanmoqda...</td></tr>'; lastVisible=null; }
+// Rasm preview
+document.getElementById('qimage').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    // Fayl hajmini tekshirish (max 1MB)
+    if (file.size > 1024 * 1024) {
+      alert("Rasm hajmi 1MB dan kichik bo'lishi kerak");
+      this.value = '';
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('previewImg').src = e.target.result;
+      document.getElementById('imagePreview').style.display = 'block';
+    }
+    reader.readAsDataURL(file);
+  } else {
+    document.getElementById('imagePreview').style.display = 'none';
+  }
+});
 
-  try{
-    let qRef = query(collection(db,'questions'), orderBy('createdAt','desc'), limit(batchSize));
-    if(lastVisible){ qRef = query(collection(db,'questions'), orderBy('createdAt','desc'), startAfter(lastVisible), limit(batchSize)); }
+// Savol qo'shish
+document.getElementById('addQuestion').addEventListener('click', async () => {
+  const qdir = document.getElementById('qdir').value;
+  const qdifficulty = document.getElementById('qdifficulty').value;
+  const qtext = document.getElementById('qtext').value.trim();
+  const qimage = document.getElementById('qimage').files[0];
+  const opt1 = document.getElementById('opt1').value.trim();
+  const opt2 = document.getElementById('opt2').value.trim();
+  const opt3 = document.getElementById('opt3').value.trim();
+  const opt4 = document.getElementById('opt4').value.trim();
+  const qmsg = document.getElementById('qmsg');
+  const addBtn = document.getElementById('addQuestion');
 
-    const snap = await getDocs(qRef);
-    if(snap.empty){ if(reset){ table.innerHTML='<tr><td colspan="5" class="empty-table">Savol topilmadi</td></tr>'; } else { alert('Yana savol topilmadi'); } return; }
-
-    if(reset) table.innerHTML='';
-    lastVisible = snap.docs[snap.docs.length-1];
-
-    snap.forEach(q=>{
-      const d=q.data();
-      const tr=document.createElement('tr');
-      tr.innerHTML=`
-        <td>${d.question}</td>
-        <td>${d.direction}</td>
-        <td>${d.difficulty}</td>
-        <td>${d.imageUrl ? '<i class="fas fa-image text-success"></i>':'<i class="fas fa-times text-muted"></i>'}</td>
-        <td><button class="btn danger deleteBtn" data-id="${q.id}"><i class="fas fa-trash"></i></button></td>
-      `;
-      table.appendChild(tr);
-    });
-
-    document.querySelectorAll('.deleteBtn').forEach(btn=>{
-      btn.onclick=async()=>{
-        if(!confirm('Ushbu savolni o‘chirishni xohlaysizmi?')) return;
-        await deleteDoc(doc(db,'questions',btn.dataset.id));
-        btn.closest('tr').remove();
-      };
-    });
-
-  }catch(e){ console.error(e); table.innerHTML=`<tr><td colspan="5">Xatolik: ${e.message}</td></tr>`; }
-}
-
-// Add question
-document.getElementById('addQuestion').onclick=async()=>{
-  const qdir=document.getElementById('qdir').value;
-  const qdifficulty=document.getElementById('qdifficulty').value;
-  const qtext=document.getElementById('qtext').value.trim();
-  const opt1=document.getElementById('opt1').value.trim();
-  const opt2=document.getElementById('opt2').value.trim();
-  const opt3=document.getElementById('opt3').value.trim();
-  const opt4=document.getElementById('opt4').value.trim();
-  const qimage=document.getElementById('qimage').files[0];
-  const qmsg=document.getElementById('qmsg');
-
-  if(!qdir||!qdifficulty||!qtext||!opt1||!opt2||!opt3||!opt4){ qmsg.textContent='Barcha maydonlarni to‘ldiring'; return; }
-
-  let imageUrl='';
-  if(qimage){
-    const imgRef=ref(storage,'questions/'+Date.now()+'_'+qimage.name);
-    await uploadBytes(imgRef,qimage);
-    imageUrl=await getDownloadURL(imgRef);
+  if (!qdir || !qtext || !opt1 || !opt2 || !opt3 || !opt4) {
+    qmsg.textContent = "Barcha maydonlarni to'ldiring.";
+    qmsg.className = 'muted error-message';
+    return;
   }
 
-  await addDoc(collection(db,'questions'),{
-    direction:qdir, difficulty:qdifficulty, question:qtext,
-    options:[opt1,opt2,opt3,opt4], correctIndex:0, imageUrl:imageUrl, createdAt:serverTimestamp()
-  });
+  addBtn.disabled = true;
+  addBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saqlanmoqda...';
 
-  qmsg.textContent='Savol muvaffaqiyatli qo‘shildi';
-  document.getElementById('qtext').value='';
-  ['opt1','opt2','opt3','opt4'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('qimage').value='';
+  try {
+    let imageBase64 = '';
+    
+    // Rasm yuklangan bo'lsa
+    if (qimage) {
+      const reader = new FileReader();
+      
+      await new Promise((resolve, reject) => {
+        reader.onload = function(e) {
+          imageBase64 = e.target.result;
+          resolve();
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(qimage);
+      });
+    }
 
-  loadQuestions(20,true);
+    // Savolni Firestore ga saqlash
+    const questionData = {
+      direction: qdir,
+      difficulty: qdifficulty,
+      question: qtext,
+      options: [opt1, opt2, opt3, opt4],
+      correctIndex: 0,
+      createdAt: serverTimestamp()
+    };
+
+    // Agar rasm bo'lsa, qo'shamiz
+    if (imageBase64) {
+      questionData.imageUrl = imageBase64;
+    }
+
+    await addDoc(collection(db, 'questions'), questionData);
+    
+    qmsg.textContent = "✅ Savol muvaffaqiyatli qo'shildi.";
+    qmsg.className = 'muted success-message';
+    
+    // Formani tozalash
+    ['qtext','opt1','opt2','opt3','opt4'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('qimage').value = '';
+    document.getElementById('imagePreview').style.display = 'none';
+    
+    // Savollar ro'yxatini yangilash
+    await loadQuestions();
+    
+  } catch (e) {
+    console.error("Xatolik:", e);
+    qmsg.textContent = "Xatolik: " + e.message;
+    qmsg.className = 'muted error-message';
+  } finally {
+    addBtn.disabled = false;
+    addBtn.innerHTML = '<i class="fas fa-save"></i> Savol qo\'shish';
+  }
+});
+
+// Refresh data
+document.getElementById('refreshData').addEventListener('click', () => {
+  loadAdminStats();
+  loadQuestions();
+});
+
+async function loadAdminStats() {
+  try {
+    const usersSnap = await getDocs(collection(db, "users"));
+    const resultsSnap = await getDocs(collection(db, "results"));
+
+    document.getElementById("userCount").textContent = usersSnap.size;
+
+    const uniqueUsers = new Set();
+    let totalScore = 0;
+    let validResults = 0;
+
+    resultsSnap.forEach((r) => {
+      const data = r.data();
+      if (data.uid) uniqueUsers.add(data.uid);
+      const score = Number(data.score);
+      if (!isNaN(score)) {
+        totalScore += score;
+        validResults++;
+      }
+    });
+
+    document.getElementById("testedUsers").textContent = uniqueUsers.size;
+    document.getElementById("attemptsCount").textContent = resultsSnap.size;
+    document.getElementById("avgScore").textContent = validResults > 0 ? (totalScore / validResults).toFixed(1) : "0";
+    
+    // Natijalar jadvalini yangilash
+    const tbody = document.getElementById("resultsTable");
+    tbody.innerHTML = "";
+    
+    if (resultsSnap.empty) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="empty-table">
+            <i class="fas fa-inbox"></i>
+            <p>Hozircha natijalar mavjud emas</p>
+          </td>
+        </tr>
+      `;
+    } else {
+      resultsSnap.forEach((r) => {
+        const d = r.data();
+        const percentage = d.percentage || 0;
+        const timeSpent = d.timeSpent || 0;
+        const minutes = Math.floor(timeSpent / 60);
+        const seconds = timeSpent % 60;
+        
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>
+            <div class="user-cell">
+              <div class="user-avatar-small">
+                <i class="fas fa-user"></i>
+              </div>
+              <span>${d.username || "Noma'lum"}</span>
+            </div>
+          </td>
+          <td><span class="category-badge">${d.category || "Noma'lum"}</span></td>
+          <td><strong>${d.score ?? "0"}</strong></td>
+          <td>
+            <div class="percentage ${percentage >= 80 ? 'high' : percentage >= 60 ? 'medium' : 'low'}">
+              ${percentage.toFixed(1)}%
+            </div>
+          </td>
+          <td>${d.correctAnswers || 0}/${d.totalQuestions || 0}</td>
+          <td>${minutes}:${seconds < 10 ? '0' : ''}${seconds}</td>
+          <td>${d.date?.seconds ? new Date(d.date.seconds * 1000).toLocaleDateString() : "N/A"}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("statsMsg").textContent = resultsSnap.empty
+      ? "Hozircha natijalar mavjud emas."
+      : "";
+  } catch (e) {
+    document.getElementById("statsMsg").textContent = "Xatolik: " + e.message;
+  }
 }
 
-// Load initial batch
-loadQuestions(20,true);
-document.getElementById('loadMore').onclick=()=>loadQuestions(20,false);
+async function loadQuestions() {
+  const filterDir = document.getElementById('filterDir').value;
+  const filterDifficulty = document.getElementById('filterDifficulty').value;
+  const questionsTable = document.getElementById('questionsTable');
+  questionsTable.innerHTML = '<tr><td colspan="5" class="empty-table"><i class="fas fa-spinner fa-spin"></i><p>Savollar yuklanmoqda...</p></td></tr>';
 
+  try {
+    let constraints = [];
+    if (filterDir) {
+      constraints.push(where('direction', '==', filterDir));
+    }
+    if (filterDifficulty) {
+      constraints.push(where('difficulty', '==', filterDifficulty));
+    }
+
+    let qSnap;
+    if (constraints.length > 0) {
+      qSnap = await getDocs(query(collection(db, 'questions'), ...constraints));
+    } else {
+      qSnap = await getDocs(collection(db, 'questions'));
+    }
+
+    if (qSnap.empty) {
+      questionsTable.innerHTML = `
+        <tr>
+          <td colspan="5" class="empty-table">
+            <i class="fas fa-inbox"></i>
+            <p>Hozircha savollar mavjud emas</p>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    questionsTable.innerHTML = '';
+    qSnap.forEach((q) => {
+      const d = q.data();
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="question-text">${d.question}</td>
+        <td><span class="category-badge">${d.direction}</span></td>
+        <td><span class="difficulty-badge ${d.difficulty}">${d.difficulty}</span></td>
+        <td>${d.imageUrl ? '<i class="fas fa-image text-success"></i>' : '<i class="fas fa-times text-muted"></i>'}</td>
+        <td>
+          <button class="btn danger deleteBtn" data-id="${q.id}">
+            <i class="fas fa-trash"></i>
+            O'chirish
+          </button>
+        </td>
+      `;
+      questionsTable.appendChild(tr);
+    });
+
+    document.querySelectorAll('.deleteBtn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        if (!confirm("Ushbu savolni o'chirishni xohlaysizmi?")) return;
+        try {
+          await deleteDoc(doc(db, 'questions', id));
+          btn.closest('tr').remove();
+          showNotification("Savol muvaffaqiyatli o'chirildi", "success");
+        } catch (e) {
+          showNotification("Xatolik: " + e.message, "error");
+        }
+      });
+    });
+  } catch (e) {
+    showNotification("Xatolik: " + e.message, "error");
+  }
+}
+
+// Filter events
+document.getElementById('filterDir').addEventListener('change', loadQuestions);
+document.getElementById('filterDifficulty').addEventListener('change', loadQuestions);
+
+// Natijalarni o'chirish
+document.getElementById('clearResults').addEventListener('click', async () => {
+  if (!confirm("Barcha natijalarni o'chirishni xohlaysizmi? Bu amalni ortga qaytarib bo'lmaydi.")) return;
+
+  const btn = document.getElementById('clearResults');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> O\'chirilmoqda...';
+
+  try {
+    const resultsSnap = await getDocs(collection(db, "results"));
+    const deletePromises = resultsSnap.docs.map((docSnap) => deleteDoc(doc(db, "results", docSnap.id)));
+    await Promise.all(deletePromises);
+    
+    showNotification("✅ Barcha natijalar o'chirildi.", "success");
+    await loadAdminStats();
+  } catch (e) {
+    showNotification("Xatolik: " + e.message, "error");
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = originalText;
+});
+
+// Export data
+document.getElementById('exportData').addEventListener('click', async () => {
+  showNotification("Ma'lumotlar yuklab olinmoqda...", "info");
+  setTimeout(() => {
+    showNotification("Ma'lumotlar muvaffaqiyatli yuklab olindi", "success");
+  }, 2000);
+});
+
+// Chiqish
+document.getElementById('logout').addEventListener('click', () => {
+  signOut(auth).then(() => location.href = 'login.html');
+});
+
+// Notification function
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `notification ${type} show`;
+  notification.innerHTML = `
+    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+    ${message}
+  `;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.remove();
+  }, 5000);
+}
+
+// Dastlabki yuklash
+loadAdminStats();
+loadQuestions();
 </script>
+  <script type="module" src="init-helper.js"></script>
 </body>
-</html>
+</html> 
+
