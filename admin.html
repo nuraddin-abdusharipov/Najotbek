@@ -258,6 +258,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import { 
   collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, where 
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+  import { limit, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 onAuthStateChanged(auth, user => {
   if (!user) {
@@ -454,26 +455,16 @@ async function loadAdminStats() {
 }
 
 async function loadQuestions() {
-  const filterDir = document.getElementById('filterDir').value;
-  const filterDifficulty = document.getElementById('filterDifficulty').value;
   const questionsTable = document.getElementById('questionsTable');
   questionsTable.innerHTML = '<tr><td colspan="5" class="empty-table"><i class="fas fa-spinner fa-spin"></i><p>Savollar yuklanmoqda...</p></td></tr>';
 
   try {
-    let constraints = [];
-    if (filterDir) {
-      constraints.push(where('direction', '==', filterDir));
-    }
-    if (filterDifficulty) {
-      constraints.push(where('difficulty', '==', filterDifficulty));
-    }
-
-    let qSnap;
-    if (constraints.length > 0) {
-      qSnap = await getDocs(query(collection(db, 'questions'), ...constraints));
-    } else {
-      qSnap = await getDocs(collection(db, 'questions'));
-    }
+    // HAR DOIM faqat oxirgi 20 ta savol
+    const qSnap = await getDocs(query(
+      collection(db, 'questions'), 
+      orderBy('createdAt', 'desc'), 
+      limit(20)
+    ));
 
     if (qSnap.empty) {
       questionsTable.innerHTML = `
@@ -488,6 +479,7 @@ async function loadQuestions() {
     }
 
     questionsTable.innerHTML = '';
+    
     qSnap.forEach((q) => {
       const d = q.data();
       const tr = document.createElement('tr');
@@ -512,8 +504,8 @@ async function loadQuestions() {
         if (!confirm("Ushbu savolni o'chirishni xohlaysizmi?")) return;
         try {
           await deleteDoc(doc(db, 'questions', id));
-          btn.closest('tr').remove();
           showNotification("Savol muvaffaqiyatli o'chirildi", "success");
+          await loadQuestions(); // Ro'yxatni yangilash
         } catch (e) {
           showNotification("Xatolik: " + e.message, "error");
         }
@@ -587,4 +579,5 @@ loadQuestions();
   <script type="module" src="init-helper.js"></script>
 </body>
 </html> 
+
 
